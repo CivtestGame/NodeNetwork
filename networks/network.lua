@@ -1,13 +1,13 @@
 ---@param save_id string
 ---@return Network_save[]
 local function get_set(save_id)
-    return minetest.deserialize(factory_mod_storage:get_string(save_id .. "_network")) or {}
+    return minetest.deserialize(NodeNetwork.storage:get_string(save_id .. "_network")) or {}
 end
 
 ---@param save_id string
 ---@param set Network_save[]
 local function save_set(save_id, set)
-    factory_mod_storage:set_string(save_id .. "_network", minetest.serialize(set))
+    NodeNetwork.storage:set_string(save_id .. "_network", minetest.serialize(set))
 end
 
  -- Don't know if this is actually random, but it's semi-random and will do for it's one usecase
@@ -77,7 +77,7 @@ end
 ---@param pos Position | nil
 ---@param save_id string
 local function construct(n, pos, save_id)
-    n.set_value = Network.set_values[save_id]
+    n.set_value = NodeNetwork.set_values[save_id]
     n.loaded = false
     if pos then n.loaded = n:load(pos) end
     if not n.loaded then
@@ -91,13 +91,13 @@ end
 ---@field public set_value SetValue
 ---@field public nodes Node[]
 ---@field public key number
-Network = class(construct)
+NodeNetwork.Network = class(construct)
 
 ---@param pos Position
 ---@return boolean
-function Network:load(pos)
+function NodeNetwork.Network:load(pos)
     for key, network in pairs(get_set(self.set_value.save_id)) do
-        local node_key = Network.to_node_id(pos)
+        local node_key = NodeNetwork.Network.to_node_id(pos)
         if network.nodes[node_key] then
             self.key = key
             self:from_save(network)
@@ -108,14 +108,14 @@ function Network:load(pos)
 end
 
 ---@param network Network_save
-function Network:from_save(network)
+function NodeNetwork.Network:from_save(network)
     self.nodes = network.nodes
 end
 
-function Network:save()
+function NodeNetwork.Network:save()
     local set = get_set(self.set_value.save_id)
     if not self.key then
-        self.key = Network.generate_id(self.set_value.save_id)
+        self.key = NodeNetwork.Network.generate_id(self.set_value.save_id)
     end
     set[self.key] = self:to_save()
     minetest.chat_send_all("Saving this key " .. self.key .. " for this save_id " .. self.set_value.save_id)
@@ -123,13 +123,13 @@ function Network:save()
 end
 
 ---@return Network_save
-function Network:to_save()
+function NodeNetwork.Network:to_save()
     local v = {}
     v.nodes = self.nodes
     return v
 end
 
-function Network:delete()
+function NodeNetwork.Network:delete()
     minetest.chat_send_all("Deleting key ".. tostring(self.key))
     if self.key then
         local set = get_set(self.set_value.save_id)
@@ -143,35 +143,35 @@ end
 
 ---@param pos Position
 ---@return string
-function Network.to_node_id(pos)
+function NodeNetwork.Network.to_node_id(pos)
     return pos.x .. ";" .. pos.y .. ";" .. pos.z
 end
 
 ---@param pos Position
 ---@return Node, number
-function Network:get_node(pos)
-    local key = Network.to_node_id(pos)
+function NodeNetwork.Network:get_node(pos)
+    local key = NodeNetwork.Network.to_node_id(pos)
 	return self.nodes[key], key
 end
 
 ---@param node Node
 ---@return number
-function Network:add_node(node)
-    local key = Network.to_node_id(node.pos)
+function NodeNetwork.Network:add_node(node)
+    local key = NodeNetwork.Network.to_node_id(node.pos)
     self.nodes[key] = node
     return key
 end
 
 ---@param node Node
 ---@param key number
-function Network:set_node(node, key)
+function NodeNetwork.Network:set_node(node, key)
     self.nodes[key] = node
 end
 
 ---@param pos Position
 ---@return Node | nil
-function Network:delete_node(pos)
-    local node, key = Network:get_node(pos)
+function NodeNetwork.Network:delete_node(pos)
+    local node, key = NodeNetwork.Network:get_node(pos)
     self.nodes[key] = nil
     if self:get_nodes_amount() > 0 then
         self:save()
@@ -179,14 +179,14 @@ function Network:delete_node(pos)
     else self:delete() end
 end
 
-function Network:get_nodes_amount()
+function NodeNetwork.Network:get_nodes_amount()
     local count = 0
     for _ in pairs(self.nodes) do count = count + 1 end
     return count
 end
 
 ---@param message string
-function Network:set_infotext(message, pos)
+function NodeNetwork.Network:set_infotext(message, pos)
     if pos then
         local meta = minetest.get_meta(pos)
         meta:set_string("infotext",  message)
@@ -198,17 +198,17 @@ function Network:set_infotext(message, pos)
     end
 end
 
-function Network:update_infotext()
+function NodeNetwork.Network:update_infotext()
 end
 
-function Network:merge(network2)
+function NodeNetwork.Network:merge(network2)
     for i, node in pairs(network2.nodes) do
         self:add_node(node)
     end
 end
 
 --Has no function in the base class, but can be overridden in child classes
-function Network:force_network_recalc()
+function NodeNetwork.Network:force_network_recalc()
 end
 
 
@@ -218,9 +218,9 @@ end
 ---@param pos Position
 ---@param ensure_continuity boolean
 ---@param n_class Network
-function Network.on_node_destruction(save_id, pos, ensure_continuity, n_class)
+function NodeNetwork.Network.on_node_destruction(save_id, pos, ensure_continuity, n_class)
     ---@type Network
-    local set_value = Network.set_values[save_id]
+    local set_value = NodeNetwork.set_values[save_id]
     local network = n_class(pos, save_id)
     local connected_nodes = f_util.get_adjacent_nodes(pos, set_value.types)
     if network.loaded then
@@ -245,8 +245,8 @@ end
 ---@param save_id string
 ---@return Network[]
 --Type is optional filter to reduce search space
-function Network.get_adjacent_networks(pos, n_class, save_id)
-    local connected_nodes = f_util.get_adjacent_nodes(pos, Network.set_values[save_id].types)
+function NodeNetwork.Network.get_adjacent_networks(pos, n_class, save_id)
+    local connected_nodes = f_util.get_adjacent_nodes(pos, NodeNetwork.set_values[save_id].types)
     local networks = {}
     for _, adj_pos in pairs(connected_nodes) do
         ---@type Network
@@ -267,9 +267,9 @@ end
 ---@param n_class Network
 ---@param node Node
 ---@return number[] @comment array key of inserted node
-function Network.on_node_place(save_id, node, n_class)
+function NodeNetwork.Network.on_node_place(save_id, node, n_class)
     local inserted_key
-    local connected_networks = Network.get_adjacent_networks(node.pos, n_class, save_id)
+    local connected_networks = NodeNetwork.Network.get_adjacent_networks(node.pos, n_class, save_id)
     if table.getn(connected_networks) == 0 then
         local n = n_class(nil, save_id)
         inserted_key = n:add_node(node)
@@ -284,16 +284,16 @@ function Network.on_node_place(save_id, node, n_class)
     return inserted_key
 end
 
-Network.set_values = {}
+NodeNetwork.set_values = {}
 
 ---@param save_id string
 ---@param unit_name string| nil
-function Network.register_network(save_id, unit_name)
-    Network.set_values[save_id] = {save_id = save_id, unit_name = unit_name, types = {}, usage_functions = {}}
+function NodeNetwork.Network.register_network(save_id, unit_name)
+    NodeNetwork.set_values[save_id] = {save_id = save_id, unit_name = unit_name, types = {}, usage_functions = {}}
 end
 
-function Network.register_node(save_id, block_name)
-    table.insert(Network.set_values[save_id].types,  block_name)
+function NodeNetwork.Network.register_node(save_id, block_name)
+    table.insert(NodeNetwork.set_values[save_id].types,  block_name)
 end
 --[[
 Random id generator, adapted from -- --
@@ -320,7 +320,7 @@ local function check_network_id_colission(save_id, id)
     return return_v
 end
 
-function Network.generate_id(save_id)
+function NodeNetwork.Network.generate_id(save_id)
     local id = random_string(16)
     while check_network_id_colission(save_id, id) do --Check we don't collide
         id = random_string(16)
