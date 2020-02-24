@@ -16,7 +16,7 @@ function NodeNetwork.class(base, init)
  
     -- expose a constructor which can be called by <classname>(<args>)
     local mt = {}
-    mt.__call = function(class_tbl, ...)
+    local constructor = function(...)
         local obj = {}
         setmetatable(obj,c)
         if init then
@@ -29,6 +29,10 @@ function NodeNetwork.class(base, init)
         end
         return obj
     end
+    mt.__call = function (class_tbl, ...)
+       constructor(...)
+    end
+    c.new = constructor
     c.init = init
     c.is_a = function(self, klass)
        local m = getmetatable(self)
