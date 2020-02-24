@@ -22,7 +22,7 @@ end
 ---@field public production number
 ---@field public demand number
 ---@field public usage number
-NodeNetwork.IO_network = class(NodeNetwork.Network,construct)
+NodeNetwork.IO_network = NodeNetwork.class(NodeNetwork.Network,construct)
 
 ---@param network IO_network_save
 function NodeNetwork.IO_network:from_save(network)
@@ -198,7 +198,7 @@ function NodeNetwork.IO_network:update_usage_nodes(exclude_pos)
 	else -- We will need to update usgae nodes
 		for node_key, node_name in pairs(self.usage_nodes) do
 			local node = self.nodes[node_key]
-			if not exclude_pos or not f_util.is_same_pos(exclude_pos, node.pos) then
+			if not exclude_pos or not NodeNetwork.is_same_pos(exclude_pos, node.pos) then
 				local usage = (node.demand or 0) * self.pdRatio
 				node.usage = usage
 				self:set_node(node, node_key)

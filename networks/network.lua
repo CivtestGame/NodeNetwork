@@ -44,10 +44,10 @@ end
 ---@return Network, Network
 local function recursive_add(network, old_network, pos, types)
     for key, node in pairs(old_network.nodes) do
-        if f_util.is_same_pos(node.pos, pos) then
+        if NodeNetwork.is_same_pos(node.pos, pos) then
             network:add_node(node)
             old_network.nodes[key] = nil -- We dont use delete node here since we won't use the old network for anything
-            for _, adj_pos in pairs(f_util.get_adjacent_nodes(pos, types)) do
+            for _, adj_pos in pairs(NodeNetwork.get_adjacent_nodes(pos, types)) do
                 network, old_network = recursive_add(network, old_network, adj_pos, types)
             end
             return network, old_network
@@ -91,7 +91,7 @@ end
 ---@field public set_value SetValue
 ---@field public nodes Node[]
 ---@field public key number
-NodeNetwork.Network = class(construct)
+NodeNetwork.Network = NodeNetwork.class(construct)
 
 ---@param pos Position
 ---@return boolean
@@ -222,7 +222,7 @@ function NodeNetwork.on_node_destruction(save_id, pos, ensure_continuity, n_clas
     ---@type Network
     local set_value = NodeNetwork.set_values[save_id]
     local network = n_class(pos, save_id)
-    local connected_nodes = f_util.get_adjacent_nodes(pos, set_value.types)
+    local connected_nodes = NodeNetwork.get_adjacent_nodes(pos, set_value.types)
     if network.loaded then
         if table.getn(connected_nodes) > 1 and ensure_continuity == true then
             local node, key = network:get_node(pos)
@@ -246,7 +246,7 @@ end
 ---@return Network[]
 --Type is optional filter to reduce search space
 function NodeNetwork.get_adjacent_networks(pos, n_class, save_id)
-    local connected_nodes = f_util.get_adjacent_nodes(pos, NodeNetwork.set_values[save_id].types)
+    local connected_nodes = NodeNetwork.get_adjacent_nodes(pos, NodeNetwork.set_values[save_id].types)
     local networks = {}
     for _, adj_pos in pairs(connected_nodes) do
         ---@type Network
