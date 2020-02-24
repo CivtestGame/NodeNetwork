@@ -97,7 +97,7 @@ NodeNetwork.Network = class(construct)
 ---@return boolean
 function NodeNetwork.Network:load(pos)
     for key, network in pairs(get_set(self.set_value.save_id)) do
-        local node_key = NodeNetwork.Network.to_node_id(pos)
+        local node_key = NodeNetwork.to_node_id(pos)
         if network.nodes[node_key] then
             self.key = key
             self:from_save(network)
@@ -115,7 +115,7 @@ end
 function NodeNetwork.Network:save()
     local set = get_set(self.set_value.save_id)
     if not self.key then
-        self.key = NodeNetwork.Network.generate_id(self.set_value.save_id)
+        self.key = NodeNetwork.generate_id(self.set_value.save_id)
     end
     set[self.key] = self:to_save()
     minetest.chat_send_all("Saving this key " .. self.key .. " for this save_id " .. self.set_value.save_id)
@@ -143,21 +143,21 @@ end
 
 ---@param pos Position
 ---@return string
-function NodeNetwork.Network.to_node_id(pos)
+function NodeNetwork.to_node_id(pos)
     return pos.x .. ";" .. pos.y .. ";" .. pos.z
 end
 
 ---@param pos Position
 ---@return Node, number
 function NodeNetwork.Network:get_node(pos)
-    local key = NodeNetwork.Network.to_node_id(pos)
+    local key = NodeNetwork.to_node_id(pos)
 	return self.nodes[key], key
 end
 
 ---@param node Node
 ---@return number
 function NodeNetwork.Network:add_node(node)
-    local key = NodeNetwork.Network.to_node_id(node.pos)
+    local key = NodeNetwork.to_node_id(node.pos)
     self.nodes[key] = node
     return key
 end
@@ -218,7 +218,7 @@ end
 ---@param pos Position
 ---@param ensure_continuity boolean
 ---@param n_class Network
-function NodeNetwork.Network.on_node_destruction(save_id, pos, ensure_continuity, n_class)
+function NodeNetwork.on_node_destruction(save_id, pos, ensure_continuity, n_class)
     ---@type Network
     local set_value = NodeNetwork.set_values[save_id]
     local network = n_class(pos, save_id)
@@ -245,7 +245,7 @@ end
 ---@param save_id string
 ---@return Network[]
 --Type is optional filter to reduce search space
-function NodeNetwork.Network.get_adjacent_networks(pos, n_class, save_id)
+function NodeNetwork.get_adjacent_networks(pos, n_class, save_id)
     local connected_nodes = f_util.get_adjacent_nodes(pos, NodeNetwork.set_values[save_id].types)
     local networks = {}
     for _, adj_pos in pairs(connected_nodes) do
@@ -267,7 +267,7 @@ end
 ---@param n_class Network
 ---@param node Node
 ---@return number[] @comment array key of inserted node
-function NodeNetwork.Network.on_node_place(save_id, node, n_class)
+function NodeNetwork.on_node_place(save_id, node, n_class)
     local inserted_key
     local connected_networks = NodeNetwork.Network.get_adjacent_networks(node.pos, n_class, save_id)
     if table.getn(connected_networks) == 0 then
@@ -288,11 +288,11 @@ NodeNetwork.set_values = {}
 
 ---@param save_id string
 ---@param unit_name string| nil
-function NodeNetwork.Network.register_network(save_id, unit_name)
+function NodeNetwork.register_network(save_id, unit_name)
     NodeNetwork.set_values[save_id] = {save_id = save_id, unit_name = unit_name, types = {}, usage_functions = {}}
 end
 
-function NodeNetwork.Network.register_node(save_id, block_name)
+function NodeNetwork.register_node(save_id, block_name)
     table.insert(NodeNetwork.set_values[save_id].types,  block_name)
 end
 --[[
@@ -320,7 +320,7 @@ local function check_network_id_colission(save_id, id)
     return return_v
 end
 
-function NodeNetwork.Network.generate_id(save_id)
+function NodeNetwork.generate_id(save_id)
     local id = random_string(16)
     while check_network_id_colission(save_id, id) do --Check we don't collide
         id = random_string(16)

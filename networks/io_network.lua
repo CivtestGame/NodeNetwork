@@ -22,7 +22,7 @@ end
 ---@field public production number
 ---@field public demand number
 ---@field public usage number
-NodeNetwork.IO_network = class(Network,construct)
+NodeNetwork.IO_network = class(NodeNetwork.Network,construct)
 
 ---@param network IO_network_save
 function NodeNetwork.IO_network:from_save(network)
@@ -127,12 +127,12 @@ function NodeNetwork.IO_network:add_to_usage_nodes(pos, key)
 end
 
 function NodeNetwork.IO_network:remove_from_production_nodes(pos)
-	local id = Network.to_node_id(pos)
+	local id = NodeNetwork.to_node_id(pos)
 	self.production_nodes[id] = nil
 end
 
 function NodeNetwork.IO_network:remove_from_usage_nodes(pos)
-	local id = Network.to_node_id(pos)
+	local id = NodeNetwork.to_node_id(pos)
 	self.usage_nodes[id] = nil
 end
 
@@ -236,35 +236,15 @@ function NodeNetwork.IO_network:force_network_recalc()
 end
 
 ---@param save_id string
----@param node Node
-function NodeNetwork.IO_network.on_node_place(save_id, node)
-	local key = Network.on_node_place(save_id, node, NodeNetwork.IO_network)
-end
-
----@param save_id string
----@param pos Position
----@param io_type string
-function NodeNetwork.IO_network.on_node_destruction(save_id, pos, io_type, ensure_continuity)
-	--[[local network = IO_network(pos, save_id)
-	if io_type == "use" then
-		network:update_demand(pos, 0)
-	elseif io_type == "prod" then
-		network:update_production(pos, 0)
-	end
-	network:save()]]--
-	Network.on_node_destruction(save_id, pos, ensure_continuity, NodeNetwork.IO_network)
-end
-
----@param save_id string
 ---@param block_name string
 ---@param usage_function function
-function NodeNetwork.IO_network.register_usage_node(save_id, block_name, usage_function)
-	Network.register_node(save_id, block_name)
-	Network.set_values[save_id].usage_functions[block_name] = usage_function
+function NodeNetwork.register_usage_node(save_id, block_name, usage_function)
+	NodeNetwork.register_node(save_id, block_name)
+	NodeNetwork.set_values[save_id].usage_functions[block_name] = usage_function
 end
 
 ---@param save_id string
 ---@param block_name string
-function NodeNetwork.IO_network.register_production_node(save_id, block_name)
-	Network.register_node(save_id, block_name)
+function NodeNetwork.register_production_node(save_id, block_name)
+	NodeNetwork.register_node(save_id, block_name)
 end
