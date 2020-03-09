@@ -59,6 +59,7 @@ function NodeNetwork.IO_network:calc_pdratio()
 	end
 end
 
+---@param node Node
 function NodeNetwork.IO_network:add_node(node)
 	local update_needed = false
 	local key = self._base.add_node(self, node)
@@ -85,6 +86,7 @@ function NodeNetwork.IO_network:add_node(node)
 	else
 		self:update_infotext(node.pos)
 	end
+	return key
 end
 
 ---@param pos Position
@@ -110,6 +112,7 @@ function NodeNetwork.IO_network:delete_node(pos)
 			self:update_usage_nodes()
 		end
 	end
+	return node
 end
 
 ---@param pos Position
