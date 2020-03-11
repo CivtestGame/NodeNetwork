@@ -18,24 +18,6 @@ local function get_random_node(nodes)
     return node,key
 end
 
-local function split (inputstr, sep)
-    if sep == nil then
-            sep = "%s"
-    end
-    local t={}
-    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-            table.insert(t, str)
-    end
-    return t
-end
-
----@param string string
----@return Position
-local function from_node_id(string)
-    local p = split(string, ";")
-    return {x = p[1], y = p[2], z=p[3]}
-end
-
 --Recursive function to hopefully generate a new network in cases of network splits
 ---@param network Network
 ---@param old_network Network
@@ -141,12 +123,6 @@ function NodeNetwork.Network:delete()
 end
 
 ---@param pos Position
----@return string
-function NodeNetwork.to_node_id(pos)
-    return pos.x .. ";" .. pos.y .. ";" .. pos.z
-end
-
----@param pos Position
 ---@return Node, number
 function NodeNetwork.Network:get_node(pos)
     local key = NodeNetwork.to_node_id(pos)
@@ -179,9 +155,7 @@ function NodeNetwork.Network:delete_node(pos)
 end
 
 function NodeNetwork.Network:get_nodes_amount()
-    local count = 0
-    for _ in pairs(self.nodes) do count = count + 1 end
-    return count
+    return NodeNetwork.count_list(self.nodes)
 end
 
 ---@param message string
@@ -239,27 +213,6 @@ function NodeNetwork.on_node_destruction(save_id, pos, ensure_continuity)
     end
 end
 
----@param pos Position
----@param save_id string
----@return Network[]
---Type is optional filter to reduce search space
-function NodeNetwork.get_adjacent_networks(pos, save_id)
-    local connected_nodes = NodeNetwork.get_adjacent_nodes(pos, NodeNetwork.set_values[save_id].types)
-    local networks = {}
-    for _, adj_pos in pairs(connected_nodes) do
-        ---@type Network
-        local n = NodeNetwork.set_values[save_id].constructor(adj_pos, save_id)
-        if n.loaded then
-            local duplicate = false
-            for _, network in pairs(networks) do
-                if(n.key == network.key) then duplicate = true end
-            end
-            if not duplicate then table.insert(networks, n) end
-        end
-    end
-    return networks
-end
-
 --Set values is an array of possible networks that the block can connect to
 ---@param save_id string
 ---@param node Node
@@ -267,12 +220,15 @@ end
 function NodeNetwork.on_node_place(save_id, node)
     local inserted_key
     local connected_networks = NodeNetwork.get_adjacent_networks(node.pos, save_id)
-    if table.getn(connected_networks) == 0 then
+    local count = NodeNetwork.count_list(connected_networks)
+    if count == 0 then
         local n = NodeNetwork.set_values[save_id].constructor(nil, save_id)
         inserted_key = n:add_node(node)
         n:save()
-    elseif table.getn(connected_networks) == 1 then
-        local network = connected_networks[1]
+    elseif count == 1 then
+        f_util.debug(connected_networks)
+        local nkey, network = next(connected_networks)
+        f_util.debug(network)
         inserted_key = network:add_node(node)
         network:save()
     else

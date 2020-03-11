@@ -14,7 +14,7 @@ end
 NodeNetwork.craft_network = NodeNetwork.class(NodeNetwork.IO_network,construct)
 
 ---@param node Node
-function NodeNetwork.IO_network:add_node(node)
+function NodeNetwork.craft_network:add_node(node)
 	local key = self._base.add_node(self, node)
 	if node.conversion then
 		minetest.debug("ADDED CONVERSION NODE, THIS IS NOT A DRILL")
@@ -22,7 +22,7 @@ function NodeNetwork.IO_network:add_node(node)
 end
 
 ---@param pos Position
-function NodeNetwork.IO_network:delete_node(pos)
+function NodeNetwork.craft_network:delete_node(pos)
 	local node = self._base.delete_node(self,pos)
 	if node then -- If we get retuned a node, it means the network wasen't deleted
 		if node.conversion then
