@@ -30,7 +30,7 @@ function NodeNetwork.class(base, init)
         return obj
     end
     mt.__call = function (class_tbl, ...)
-       constructor(...)
+       return constructor(...)
     end
     c.new = constructor
     c.init = init
@@ -46,6 +46,31 @@ function NodeNetwork.class(base, init)
     return c
  end
 
+
+local function split (inputstr, sep)
+    if sep == nil then
+            sep = "%s"
+    end
+    local t={}
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+            table.insert(t, str)
+    end
+    return t
+end
+
+---@param string string
+---@return Position
+function NodeNetwork.from_node_id(string)
+    local p = split(string, ";")
+    return {x = p[1], y = p[2], z=p[3]}
+end
+
+---@param pos Position
+---@return string
+function NodeNetwork.to_node_id(pos)
+    return pos.x .. ";" .. pos.y .. ";" .. pos.z
+end
+
 function NodeNetwork.is_same_pos(pos1, pos2)
     return pos1.x == pos2.x and pos1.y == pos2.y and pos1.z == pos2.z
 end
@@ -58,6 +83,7 @@ local function same_type(node_name, types)
         if node_name == type then return true end
     end
 end
+
 --Type is an optional filter
 ---@param pos Position
 ---@param types string[]
@@ -80,4 +106,44 @@ function NodeNetwork.get_adjacent_nodes(pos, types)
         return_pos = {posy,negy,posx,negx,posz,negz}
     end
     return return_pos
+end
+
+function NodeNetwork.count_list(list)
+    local count = 0
+    if list then
+        for _ in pairs(list) do count = count + 1 end
+    end
+    return count
+end
+
+---@param pos Position
+---@param save_id string | nil
+---@return Network[]
+--Type is optional filter to reduce search space
+function NodeNetwork.get_adjacent_networks(pos, save_id)
+    local set_vals
+    if save_id then 
+        set_vals = {}
+        set_vals[save_id] = NodeNetwork.set_values[save_id]
+    else set_vals = NodeNetwork.set_values end
+    local networks = {}
+    --minetest.chat_send_all("Called adjacent network")
+    for key, val in pairs(set_vals) do
+        local connected_nodes = NodeNetwork.get_adjacent_nodes(pos, val.types)
+        for _, adj_pos in pairs(connected_nodes) do
+            ---@type Network
+            local n = val.constructor(adj_pos, key)
+            if n.loaded then
+                local duplicate = false
+                for _, network in pairs(networks) do
+                    if(n.key == network.key) then duplicate = true end
+                end
+                if not duplicate then 
+                    local key = NodeNetwork.to_node_id(adj_pos)
+                    networks[key] =  n
+                end
+            end
+        end
+    end
+    return networks
 end
