@@ -58,6 +58,40 @@ local function split (inputstr, sep)
     return t
 end
 
+
+--[[
+Random id generator, adapted from -- --
+https://gist.github.com/haggen/2fd643ea9a261fea2094#gistcomment-2339900 -- --
+--                              --
+Generate random hex strings as uuids -- --
+]]
+local charset = {}  do -- [0-9a-f]
+    for c = 48, 57  do table.insert(charset, string.char(c)) end
+    for c = 97, 102 do table.insert(charset, string.char(c)) end
+end
+
+local function random_string(length)
+    if not length or length <= 0 then return '' end
+    math.randomseed(os.clock()^5)
+    return random_string(length - 1) .. charset[math.random(1, #charset)]
+end
+
+local function check_network_id_colission(save_id, id)
+    local return_v = false
+    for key,_ in pairs(NodeNetwork.get_set(save_id)) do
+        if key == id then return_v = true end
+    end
+    return return_v
+end
+
+function NodeNetwork.generate_id(save_id)
+    local id = random_string(16)
+    while check_network_id_colission(save_id, id) do --Check we don't collide
+        id = random_string(16)
+    end
+    return id
+end
+
 ---@param string string
 ---@return Position
 function NodeNetwork.from_node_id(string)

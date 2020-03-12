@@ -237,17 +237,3 @@ function NodeNetwork.IO_network:force_network_recalc()
 	end
 	self:update_usage_nodes()
 end
-
----@param save_id string
----@param block_name string
----@param usage_function function
-function NodeNetwork.register_usage_node(save_id, block_name, usage_function)
-	NodeNetwork.register_node(save_id, block_name)
-	NodeNetwork.set_values[save_id].usage_functions[block_name] = usage_function
-end
-
----@param save_id string
----@param block_name string
-function NodeNetwork.register_production_node(save_id, block_name)
-	NodeNetwork.register_node(save_id, block_name)
-end

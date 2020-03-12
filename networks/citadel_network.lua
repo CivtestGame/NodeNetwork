@@ -13,26 +13,12 @@ end
 ---@param save_id string
 local function construct (n, pos, save_id)
 	NodeNetwork.citadel_network._base.init(n, pos, save_id)
-	if not n.loaded then
-		n.conversion_nodes = {}
-		n.conversion_item = nil
-		n.output_buffer = 0
-	end
 end
 
 ---@class citadel_network : Network
 NodeNetwork.citadel_network = NodeNetwork.class(NodeNetwork.Network,construct)
 
 local is_protected_fn = minetest.is_protected
-
---[[function minetest.is_protected(pos, pname, action)
-    if action ~= minetest.PLACE_ACTION then
-        return is_protected_fn(pos,pname,action)
-    end
-    --Check adjacent networks, then see if the placer is allowd on those blocks
-    local adjacent_networks = NodeNetwork.get_adjacent_nodes(pos, NodeNetwork.set_values[save_id].types)
-    minetest.chat_send_all("called")
-end]]--
 
 ---@param itemstack any
 ---@param placer any
