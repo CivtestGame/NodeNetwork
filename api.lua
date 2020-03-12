@@ -43,48 +43,11 @@ local function merge_networks(networks, extra_node, save_id)
     return key
 end
 
-local function wrap_after_place(def, block_name, set_value)
-    local old_after_place = def.after_place_node
-
-    minetest.debug("WRAP CALLED!" .. block_name)
-
-    def.after_place_node = function(pos, placer, itemstack, pointed_thing)
-        minetest.chat_send_all("After place called!")
-        local node = {pos = pos}
-        if set_value.production_nodes[block_name] then node.production = set_value.production_nodes[block_name].initial_production end
-        if set_value.usage_nodes[block_name] then node.demand = set_value.usage_nodes[block_name].demand end
-        NodeNetwork.on_node_place(set_value.save_id, node)
-        if old_after_place then old_after_place(pos, placer, itemstack, pointed_thing) end
-    end
-    return def
-end
-
-local function wrap_after_destruct(def, block_name, set_value)
-    local old_after_destruct = def.after_destruct
-    def.after_destruct = function(pos, old_node)
-        minetest.chat_send_all("After destruct called!")
-        NodeNetwork.on_node_destruction(set_value.save_id, pos, set_value.ensure_continuity)
-        if old_after_destruct then old_after_destruct(pos, old_node) end
-    end
-    return def
-end
-
-local function wrap_functions(block_name, set_value)
-    local olddef = table.copy(core.registered_nodes[block_name])
-    if olddef then
-        local def = wrap_after_place(olddef, block_name, set_value)
-        def = wrap_after_destruct(def,block_name, set_value)
-        minetest.register_node(block_name, def)
-    end
-end
-
---START OF GLOBAL FUNCTIONS
-
 
 ---@param save_id string
 ---@param pos Position
 ---@param ensure_continuity boolean
-function NodeNetwork.on_node_destruction(save_id, pos, ensure_continuity)
+local function on_node_destruction(save_id, pos, ensure_continuity)
     ---@type Network
     local set_value = NodeNetwork.set_values[save_id]
     local network = set_value.constructor(pos, save_id)
@@ -111,7 +74,7 @@ end
 ---@param save_id string
 ---@param node Node
 ---@return number[] @comment array key of inserted node
-function NodeNetwork.on_node_place(save_id, node)
+local function on_node_place(save_id, node)
     local inserted_key
     local connected_networks = NodeNetwork.get_adjacent_networks(node.pos, save_id)
     local count = NodeNetwork.count_list(connected_networks)
@@ -128,6 +91,71 @@ function NodeNetwork.on_node_place(save_id, node)
     end
     return inserted_key
 end
+
+local function wrap_node_place(def)
+    local old_node_place = def.on_place
+
+    def.on_place = function(itemstack, placer, pointed_thing)
+        local pos = minetest.get_pointed_thing_position(pointed_thing, true)
+        if pos then
+            local connected_nets = NodeNetwork.get_adjacent_networks(pos)
+            if connected_nets then
+                for key,value in pairs(connected_nets) do
+                    local pos = NodeNetwork.from_node_id(key)
+                    if not ct.has_locked_container_privilege(pos, placer) then
+                        minetest.chat_send_player(placer:get_player_name(),"You can't place a network block next to a network you don't have access to")
+                        return itemstack, placer, pointed_thing
+                    end
+                end
+            end
+        end
+
+        if old_node_place then
+             return old_node_place(itemstack, placer, pointed_thing)
+        else
+            return minetest.item_place(itemstack, placer, pointed_thing) 
+        end
+    end
+
+    return def
+end
+
+local function wrap_after_place(def, block_name, set_value)
+    local old_after_place = def.after_place_node
+
+    def.after_place_node = function(pos, placer, itemstack, pointed_thing)
+        local node = {pos = pos}
+        if set_value.production_nodes[block_name] then node.production = set_value.production_nodes[block_name].initial_production end
+        if set_value.usage_nodes[block_name] then node.demand = set_value.usage_nodes[block_name].demand end
+        on_node_place(set_value.save_id, node)
+        if old_after_place then old_after_place(pos, placer, itemstack, pointed_thing) end
+    end
+    return def
+end
+
+local function wrap_after_destruct(def, block_name, set_value)
+    local old_after_destruct = def.after_destruct
+    def.after_destruct = function(pos, old_node)
+        on_node_destruction(set_value.save_id, pos, set_value.ensure_continuity)
+        if old_after_destruct then old_after_destruct(pos, old_node) end
+    end
+    return def
+end
+
+local function wrap_functions(block_name, set_value)
+    local olddef = table.copy(core.registered_nodes[block_name])
+    if olddef then
+        local def = wrap_after_place(olddef, block_name, set_value)
+        def = wrap_after_destruct(def,block_name, set_value)
+        --Citadella integration
+        if ct then
+            def = wrap_node_place(def)
+        end
+        minetest.register_node(block_name, def)
+    end
+end
+
+--START OF GLOBAL FUNCTIONS
 
 NodeNetwork.set_values = {}
 

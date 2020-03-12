@@ -15,14 +15,14 @@ local function construct (n, pos, save_id)
 	end
 end
 
----@class IO_network : citadel_network
+---@class IO_network : Network
 ---@field public _base Network
 ---@field public production_nodes number[]
 ---@field public usage_nodes number[]
 ---@field public production number
 ---@field public demand number
 ---@field public usage number
-NodeNetwork.IO_network = NodeNetwork.class(NodeNetwork.citadel_network,construct)
+NodeNetwork.IO_network = NodeNetwork.class(NodeNetwork.Network,construct)
 
 ---@param network IO_network_save
 function NodeNetwork.IO_network:from_save(network)

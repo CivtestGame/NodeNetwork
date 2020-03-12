@@ -90,7 +90,7 @@ end
 ---@param pos Position
 ---@return Node | nil
 function NodeNetwork.Network:delete_node(pos)
-    local node, key = NodeNetwork.Network:get_node(pos)
+    local node, key = self:get_node(pos)
     self.nodes[key] = nil
     if self:get_nodes_amount() > 0 then
         self:save()

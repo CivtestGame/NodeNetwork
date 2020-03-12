@@ -10,7 +10,6 @@ dofile(modpath .. "/storage.lua")
 dofile(modpath .. "/helper_funcs.lua")
 dofile(modpath .. "/api.lua")
 dofile(modpath .. "/networks/network.lua")
-dofile(modpath .. "/networks/citadel_network.lua")
 dofile(modpath .. "/networks/io_network.lua")
 
 return NodeNetwork
