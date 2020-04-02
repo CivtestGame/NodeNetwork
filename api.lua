@@ -147,10 +147,12 @@ local function wrap_functions(block_name, set_value)
     if olddef then
         local def = wrap_after_place(olddef, block_name, set_value)
         def = wrap_after_destruct(def,block_name, set_value)
+
         --Citadella integration
-        if ct then
+        if minetest.get_modpath("citadella") and ct then
             def = wrap_node_place(def)
         end
+
         minetest.register_node(block_name, def)
     end
 end
